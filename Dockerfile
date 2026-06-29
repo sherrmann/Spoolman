@@ -6,7 +6,7 @@ ENV UV_NO_DEV=1
 ENV UV_PYTHON_DOWNLOADS=0
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     g++ \
     python3-dev \
     libpq-dev \
@@ -38,7 +38,7 @@ LABEL org.opencontainers.image.description="Keep track of your inventory of 3D-p
 LABEL org.opencontainers.image.licenses=MIT
 
 # Install gosu for privilege dropping
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
