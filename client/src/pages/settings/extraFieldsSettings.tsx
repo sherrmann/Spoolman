@@ -24,6 +24,7 @@ import { useState } from "react";
 import { Trans } from "react-i18next";
 import { DateTimePicker } from "../../components/dateTimePicker";
 import { InputNumberRange } from "../../components/inputNumberRange";
+import { formatNumberOnUserInput, numberParserAllowEmpty } from "../../utils/parsing";
 import { EntityType, Field, FieldType, useDeleteField, useGetFields, useSetField } from "../../utils/queryFields";
 
 dayjs.extend(utc);
@@ -189,7 +190,7 @@ const EditableCell = ({ record, editing, dataIndex, children, form, ...restProps
         type: "integer",
       });
     } else if (fieldType === FieldType.float) {
-      inputNode = <InputNumber />;
+      inputNode = <InputNumber formatter={formatNumberOnUserInput} parser={numberParserAllowEmpty} />;
       rules.push({
         type: "number",
       });
