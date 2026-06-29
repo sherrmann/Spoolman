@@ -70,12 +70,15 @@ export const FilamentShow = () => {
           <Button
             type="primary"
             icon={<PrinterOutlined />}
+            disabled={!record?.id}
             href={
-              getBasePath() +
-              "/filament/print?filaments=" +
-              record?.id +
-              "&return=" +
-              encodeURIComponent(window.location.pathname)
+              record?.id
+                ? getBasePath() +
+                  "/filament/print?filaments=" +
+                  record.id +
+                  "&return=" +
+                  encodeURIComponent(window.location.pathname)
+                : undefined
             }
           >
             {t("printing.qrcode.button")}

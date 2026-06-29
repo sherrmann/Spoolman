@@ -76,7 +76,9 @@ const FilamentSelectModal = ({ description, onPrint, onExport, initialSelectedId
     pagination: { currentPage, pageSize },
   };
 
-  const dataSource = [...(tableProps.dataSource ?? [])];
+  // Memoize so the reference is stable across renders when the underlying data is unchanged;
+  // otherwise the selectUnselectFiltered useCallback (deps [dataSource]) is rebuilt every render.
+  const dataSource = useMemo(() => [...(tableProps.dataSource ?? [])], [tableProps.dataSource]);
   const selectedSet = useMemo(() => new Set(selectedItems), [selectedItems]);
   const paginationTotal = tableProps.pagination ? (tableProps.pagination.total ?? 0) : 0;
 

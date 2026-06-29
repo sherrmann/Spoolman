@@ -64,6 +64,9 @@ export function useGetFilamentsByIds(ids: number[]) {
         queryKey: ["filament", id],
         queryFn: async () => {
           const res = await fetch(getAPIURL() + "/filament/" + id);
+          if (!res.ok) {
+            throw new Error(`Failed to fetch filament ${id} (status ${res.status})`);
+          }
           return (await res.json()) as IFilament;
         },
       };
