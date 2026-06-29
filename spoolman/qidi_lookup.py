@@ -9,7 +9,7 @@ Provides functions to:
 
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -118,7 +118,10 @@ async def find_spool_by_qidi_tag(
             selectinload(Spool.extra),
         )
         .where(Filament.material == material_type)
-        .where(Filament.color_hex == color_hex)
+        # Compare colour case-insensitively: Qidi-created filaments store an uppercase hex while the
+        # lookup value is lowercased, so an exact compare never matches on case-sensitive backends
+        # (Postgres/CockroachDB), producing duplicate spools on every rescan.
+        .where(func.lower(Filament.color_hex) == color_hex)
         .where(Spool.archived.is_(False))
         .order_by(Spool.registered.desc())
         .limit(1)

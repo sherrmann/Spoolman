@@ -1,7 +1,7 @@
 import { LinkOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
 import { Alert, Button, Descriptions, Modal, Segmented, Space, Spin, Typography } from "antd";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { QidiTagData, TigerTagData, isWebNfcSupported, useNfcBind, useNfcRead, useNfcStatus } from "../utils/nfc";
 import { decodeTigerTag, isTigerTag } from "../utils/tigertagCodec";
 import { ISpool } from "../pages/spools/model";
@@ -105,6 +105,19 @@ const NfcBindModal: React.FC<NfcBindModalProps> = ({ spool, visible, onClose, on
   const [scannedTagUid, setScannedTagUid] = useState<string | null>(null);
   const [scannedTagFormat, setScannedTagFormat] = useState<string | null>(null);
   const t = useTranslate();
+  const scanControllerRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight Web NFC scan when the modal closes or unmounts.
+  useEffect(() => {
+    if (!visible) {
+      scanControllerRef.current?.abort();
+      scanControllerRef.current = null;
+    }
+    return () => {
+      scanControllerRef.current?.abort();
+      scanControllerRef.current = null;
+    };
+  }, [visible]);
 
   const nfcStatus = useNfcStatus();
   const nfcReadMutation = useNfcRead();
@@ -168,6 +181,7 @@ const NfcBindModal: React.FC<NfcBindModalProps> = ({ spool, visible, onClose, on
     try {
       const reader = new window.NDEFReader();
       const controller = new AbortController();
+      scanControllerRef.current = controller;
 
       reader.onreading = (event: NDEFReadingEvent) => {
         controller.abort();

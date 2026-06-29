@@ -1,5 +1,6 @@
 """NFC tag reader/writer API endpoints."""
 
+import asyncio
 import base64
 import json
 import logging
@@ -151,7 +152,9 @@ async def nfc_read(
     try:
         from spoolman.nfc_service import nfc_service
 
-        result = nfc_service.read_tag_auto(timeout=10.0)
+        # nfcpy talks to the reader synchronously and blocks until a tag is presented or the timeout
+        # elapses; run it off the event loop so a pending read does not freeze the whole server.
+        result = await asyncio.to_thread(nfc_service.read_tag_auto, timeout=10.0)
         if result is None:
             return NfcReadResponse(success=False, message="No tag detected. Please place a tag on the reader.")
 
@@ -305,7 +308,7 @@ async def _handle_tigertag_write(nfc_service: "NfcService", spool: "Spool", user
     tag_data.user_message = user_message
     raw_data = encode_ntag213(tag_data)
 
-    success = nfc_service.write_tag(raw_data)
+    success = await asyncio.to_thread(nfc_service.write_tag, raw_data)
     if success:
         return NfcWriteResponse(success=True, message="TigerTag written successfully.")
     return NfcWriteResponse(success=False, message="Failed to write tag. Ensure NTAG213 tag is placed on reader.")
@@ -319,7 +322,7 @@ async def _handle_qidi_write(nfc_service: "NfcService", spool: "Spool") -> NfcWr
     tag_data = map_spool_to_qidi(spool)
     raw_data = encode_qidi_block(tag_data)
 
-    uid = nfc_service.write_mifare_classic_block(raw_data)
+    uid = await asyncio.to_thread(nfc_service.write_mifare_classic_block, raw_data)
     if uid is not None:
         uid_hex = uid.hex()
         return NfcWriteResponse(success=True, nfc_tag_uid=uid_hex, message="Qidi tag written successfully.")
@@ -899,7 +902,7 @@ async def _bind_tigertag(db: AsyncSession, spool: "Spool", request: NfcBindReque
     # Check if another spool is already bound to this tag
     existing_stmt = select(SpoolField).where(SpoolField.key == "nfc_tag_id").where(SpoolField.value == nfc_tag_id)
     existing_result = await db.execute(existing_stmt)
-    existing_binding = existing_result.scalar_one_or_none()
+    existing_binding = existing_result.scalars().first()
     if existing_binding and existing_binding.spool_id != request.spool_id:
         return NfcBindResponse(
             success=False,
@@ -938,7 +941,7 @@ async def _bind_qidi(db: AsyncSession, spool: "Spool", request: NfcBindRequest) 
     # Check if another spool is already bound to this tag
     existing_stmt = select(SpoolField).where(SpoolField.key == "nfc_tag_id").where(SpoolField.value == nfc_tag_id)
     existing_result = await db.execute(existing_stmt)
-    existing_binding = existing_result.scalar_one_or_none()
+    existing_binding = existing_result.scalars().first()
     if existing_binding and existing_binding.spool_id != request.spool_id:
         return NfcBindResponse(
             success=False,

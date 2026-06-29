@@ -2,9 +2,11 @@
 
 import json
 import logging
+from pathlib import Path
 
 from fastapi import APIRouter
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse
+from pydantic import ValidationError
 
 from spoolman.env import is_tigertag_enabled
 from spoolman.externaldb import ExternalFilament, ExternalMaterial, get_filaments_file, get_materials_file
@@ -19,41 +21,44 @@ router = APIRouter(
 logger = logging.getLogger(__name__)
 
 
+def _load_filament_source(path: Path, source: str) -> list[dict]:
+    """Read a filament JSON cache file, tagging each entry with its source. Returns [] on any error."""
+    try:
+        if not path.exists():
+            return []
+        data = json.loads(path.read_bytes())
+        for entry in data:
+            entry.setdefault("source", source)
+    except Exception:
+        logger.exception("Failed to load %s filaments", source)
+        return []
+    return data
+
+
+def _validate_external_filament(entry: dict) -> ExternalFilament | None:
+    """Validate one raw entry; return None (and log) if it does not conform."""
+    try:
+        return ExternalFilament.model_validate(entry)
+    except ValidationError:
+        logger.warning("Skipping malformed external filament entry: %s", entry.get("id", "<unknown>"))
+        return None
+
+
 @router.get(
     "/filament",
     name="Get all external filaments",
     response_model_exclude_none=True,
-    response_model=list[ExternalFilament],
 )
-async def filaments() -> JSONResponse:
+async def filaments() -> list[ExternalFilament]:
     """Get all external filaments from all sources."""
-    merged: list[dict] = []
-
-    # Load SpoolmanDB filaments
-    try:
-        spoolmandb_path = get_filaments_file()
-        if spoolmandb_path.exists():
-            data = json.loads(spoolmandb_path.read_bytes())
-            for entry in data:
-                entry["source"] = "spoolmandb"
-            merged.extend(data)
-    except Exception:
-        logger.exception("Failed to load SpoolmanDB filaments")
-
-    # Load TigerTag filaments if enabled
+    merged: list[dict] = _load_filament_source(get_filaments_file(), "spoolmandb")
     if is_tigertag_enabled():
-        try:
-            tigertag_path = get_tigertag_filaments_file()
-            if tigertag_path.exists():
-                data = json.loads(tigertag_path.read_bytes())
-                for entry in data:
-                    if "source" not in entry:
-                        entry["source"] = "tigertag"
-                merged.extend(data)
-        except Exception:
-            logger.exception("Failed to load TigerTag filaments")
+        merged.extend(_load_filament_source(get_tigertag_filaments_file(), "tigertag"))
 
-    return JSONResponse(content=merged)
+    # Return validated models so FastAPI applies the declared response_model (validation +
+    # exclude_none) instead of emitting the raw merged dicts; malformed entries are dropped above
+    # rather than 500-ing the whole endpoint.
+    return [model for model in (_validate_external_filament(e) for e in merged) if model is not None]
 
 
 @router.get(

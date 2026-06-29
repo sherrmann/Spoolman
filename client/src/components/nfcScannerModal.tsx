@@ -1,7 +1,7 @@
 import { WifiOutlined } from "@ant-design/icons";
 import { useTranslate } from "@refinedev/core";
 import { Alert, Button, Descriptions, FloatButton, Modal, Segmented, Space, Spin, Typography } from "antd";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   QidiTagData,
@@ -106,6 +106,20 @@ const NfcScannerModal: React.FC = () => {
   const [unmatchedTagFormat, setUnmatchedTagFormat] = useState<string | null>(null);
   const t = useTranslate();
   const navigate = useNavigate();
+  const scanControllerRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight Web NFC scan when the modal closes or unmounts, so the NDEFReader scan and
+  // its onreading handler stop and don't setState on an unmounted component later.
+  useEffect(() => {
+    if (!visible) {
+      scanControllerRef.current?.abort();
+      scanControllerRef.current = null;
+    }
+    return () => {
+      scanControllerRef.current?.abort();
+      scanControllerRef.current = null;
+    };
+  }, [visible]);
 
   const nfcStatus = useNfcStatus();
   const nfcReadMutation = useNfcRead();
@@ -147,6 +161,7 @@ const NfcScannerModal: React.FC = () => {
     try {
       const reader = new window.NDEFReader();
       const controller = new AbortController();
+      scanControllerRef.current = controller;
 
       reader.onreading = (event: NDEFReadingEvent) => {
         controller.abort();

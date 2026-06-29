@@ -127,7 +127,12 @@ async def find_spool_by_tigertag(
                 await bind_spool_to_tigertag(db, spool, tag_data)
             return spool
 
-        # Strategy 3: Match by spool ID directly (for tags written by Spoolman)
+        # Strategy 3: Last-resort match by spool ID, for home-grown tags Spoolman wrote without a
+        # real TigerTag catalog product ID (map_spool_to_tigertag falls back to id_product = spool.id).
+        # id_product is otherwise a TigerTag *catalog* identifier from a different number space, so a
+        # genuine third-party tag whose id_product happens to equal a spool PK would match the wrong
+        # spool. Never auto-bind on this heuristic match — a binding is permanent and we cannot tell a
+        # Spoolman-written id from a catalog id, so only return the (transient) best-effort result.
         stmt = (
             select(Spool)
             .options(
@@ -139,8 +144,11 @@ async def find_spool_by_tigertag(
         result = await db.execute(stmt)
         spool = result.unique().scalar_one_or_none()
         if spool is not None:
-            if auto_bind:
-                await bind_spool_to_tigertag(db, spool, tag_data)
+            logger.debug(
+                "TigerTag heuristic spool-id match: spool %d == id_product %d (not auto-bound)",
+                spool.id,
+                tag_data.id_product,
+            )
             return spool
 
     return None

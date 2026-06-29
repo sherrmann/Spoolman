@@ -82,6 +82,9 @@ export function useNfcStatus() {
     staleTime: 30000,
     queryFn: async () => {
       const response = await fetch(`${getAPIURL()}/nfc/status`);
+      if (!response.ok) {
+        throw new Error(`NFC request failed with status ${response.status}`);
+      }
       return response.json();
     },
   });
@@ -96,6 +99,9 @@ export function useNfcRead() {
       const response = await fetch(`${getAPIURL()}/nfc/read`, {
         method: "POST",
       });
+      if (!response.ok) {
+        throw new Error(`NFC request failed with status ${response.status}`);
+      }
       return response.json();
     },
   });
@@ -112,6 +118,9 @@ export function useNfcWrite() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       });
+      if (!response.ok) {
+        throw new Error(`NFC request failed with status ${response.status}`);
+      }
       return response.json();
     },
   });
@@ -128,6 +137,9 @@ export function useNfcEncode() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       });
+      if (!response.ok) {
+        throw new Error(`NFC request failed with status ${response.status}`);
+      }
       return response.json();
     },
   });
@@ -161,6 +173,9 @@ export function useNfcBind() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       });
+      if (!response.ok) {
+        throw new Error(`NFC request failed with status ${response.status}`);
+      }
       return response.json();
     },
   });
@@ -204,6 +219,9 @@ export function useNfcCreateFromTag() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
       });
+      if (!response.ok) {
+        throw new Error(`NFC request failed with status ${response.status}`);
+      }
       return response.json();
     },
   });
