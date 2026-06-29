@@ -58,7 +58,10 @@ export const Home = () => {
   const isLoading = spoolsAll.query.isLoading;
 
   // --- Calculations ---
-  const totalRemainingWeight = allSpools.reduce((sum, s) => sum + (s.remaining_weight ?? 0), 0);
+  const totalRemainingWeight = allSpools.reduce(
+    (sum, s) => sum + (s.remaining_weight ?? s.initial_weight ?? s.filament.weight ?? 0),
+    0,
+  );
   const totalValue = allSpools.reduce((sum, s) => sum + (s.price ?? 0), 0);
 
   const lowStockSpools = allSpools
@@ -83,7 +86,7 @@ export const Home = () => {
     const mat = s.filament.material ?? "Unknown";
     if (!materialMap[mat]) materialMap[mat] = { count: 0, weight: 0 };
     materialMap[mat].count++;
-    materialMap[mat].weight += s.remaining_weight ?? 0;
+    materialMap[mat].weight += s.remaining_weight ?? s.initial_weight ?? s.filament.weight ?? 0;
   });
   const materialBreakdown = Object.entries(materialMap).sort((a, b) => b[1].weight - a[1].weight);
 
@@ -205,10 +208,11 @@ export const Home = () => {
         <div className="kpi-card" style={{ background: S.low }}>
           <DatabaseOutlined className="kpi-bg-icon" />
           <div className="kpi-label">{t("spool.spool")}</div>
-          <div className="kpi-value">{spoolsAll.result?.total ?? 0}</div>
+          <div className="kpi-value">{allSpools.length}</div>
           <div className="kpi-footer" style={{ color: isDark ? "#6ded00" : "#16a34a" }}>
             <span>
-              +{allSpools.filter((s) => dayjs(s.registered).isAfter(dayjs().subtract(30, "day"))).length} THIS MONTH
+              +{allSpools.filter((s) => dayjs(s.registered).isAfter(dayjs().subtract(30, "day"))).length}{" "}
+              {t("home.kpi.this_month", "this month")}
             </span>
           </div>
         </div>
@@ -218,7 +222,7 @@ export const Home = () => {
           <div className="kpi-label">{t("filament.filament")}</div>
           <div className="kpi-value">{filaments.result?.total ?? 0}</div>
           <div className="kpi-footer" style={{ color: isDark ? "#00e3fd" : "#0891b2" }}>
-            <span>ALL SYNCED</span>
+            <span>{t("home.kpi.all_synced", "all synced")}</span>
           </div>
         </div>
 
@@ -227,7 +231,7 @@ export const Home = () => {
           <div className="kpi-label">{t("vendor.vendor")}</div>
           <div className="kpi-value">{vendors.result?.total ?? 0}</div>
           <div className="kpi-footer" style={{ opacity: 0.4 }}>
-            TOP: {topVendor.toUpperCase()}
+            {t("home.kpi.top", "top")}: {topVendor}
           </div>
         </div>
 
@@ -301,7 +305,9 @@ export const Home = () => {
                               />
                               <div className="low-stock-info">
                                 <h4>{getSpoolName(spool)}</h4>
-                                <p>Material: {spool.filament.material ?? "?"}</p>
+                                <p>
+                                  {t("spool.fields.material")}: {spool.filament.material ?? "?"}
+                                </p>
                               </div>
                             </div>
                             <div className="low-stock-right">
