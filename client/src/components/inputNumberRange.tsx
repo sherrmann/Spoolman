@@ -16,7 +16,13 @@ function parseValue(value?: (number | null)[]): [number | null, number | null] {
 }
 
 function parseInputNumberValue(value: string | number | null): number | null {
-  return typeof value === "number" ? value : null;
+  if (typeof value === "number") return value;
+  // antd typically emits numbers here, but its typings allow strings (e.g. with
+  // stringMode). Parse those rather than dropping them, while still treating an
+  // empty/null value as a deliberate clear.
+  if (value === null || value === "") return null;
+  const parsed = Number(value);
+  return Number.isNaN(parsed) ? null : parsed;
 }
 
 /**

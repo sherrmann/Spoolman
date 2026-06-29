@@ -33,16 +33,28 @@ async function reloadOnAuthFailure(): Promise<void> {
   window.location.reload();
 }
 
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401) {
-      // Auto-reload only on idempotent requests so unsaved form data on
-      // POST/PUT/PATCH/DELETE is preserved — mutation 401s surface through
-      // the Refine notification provider instead.
-      const method = String(error.config?.method ?? "get").toLowerCase();
-      if (method === "get" || method === "head") void reloadOnAuthFailure();
-    }
-    return Promise.reject(error);
-  },
-);
+// Guard against double-registration: in dev, Vite/React fast refresh can
+// re-evaluate this module, which would otherwise stack duplicate interceptors
+// and fire multiple reloads per 401. The flag lives on the shared axios
+// instance (not module scope) so it survives module re-evaluation.
+const instance = axiosInstance as typeof axiosInstance & {
+  __spoolmanAuthReloadInstalled?: boolean;
+};
+
+if (!instance.__spoolmanAuthReloadInstalled) {
+  instance.__spoolmanAuthReloadInstalled = true;
+
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error?.response?.status === 401) {
+        // Auto-reload only on idempotent requests so unsaved form data on
+        // POST/PUT/PATCH/DELETE is preserved — mutation 401s surface through
+        // the Refine notification provider instead.
+        const method = String(error.config?.method ?? "get").toLowerCase();
+        if (method === "get" || method === "head") void reloadOnAuthFailure();
+      }
+      return Promise.reject(error);
+    },
+  );
+}
