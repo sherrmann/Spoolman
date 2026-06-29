@@ -167,11 +167,13 @@ async def startup() -> None:
         build_date,
     )
 
-    BUILD_INFO.info({
-        "version": version,
-        "commit": commit,
-        "build_date": str(build_date) if build_date else "",
-    })
+    BUILD_INFO.info(
+        {
+            "version": version,
+            "commit": commit,
+            "build_date": str(build_date) if build_date else "",
+        }
+    )
 
     logger.info("Using data directory: %s", env.get_data_dir().resolve())
     logger.info("Using logs directory: %s", env.get_logs_dir().resolve())
