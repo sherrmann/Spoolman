@@ -207,6 +207,10 @@
   flex-direction: column;
   gap: 16px;
   min-height: 0;
+  /* The left column is an antd Tabs whose tab bar occupies ~46px of vertical
+     space above its content. This right column has no tab bar, so this offset
+     vertically aligns its first section with the left column's tab content.
+     Reset to 0 in the mobile (<=1024px) override below. */
   padding-top: 46px;
 }
 

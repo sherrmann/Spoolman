@@ -37,7 +37,7 @@ export function LocationContainer({ modalOpen, setModalOpen }: LocationContainer
 
   // Group spools by location
   const spoolLocations = (() => {
-    const spools = spoolData?.data ?? [];
+    const spools = [...(spoolData?.data ?? [])];
     spools.sort((a, b) => a.id - b.id);
 
     const grouped: Record<string, ISpool[]> = {};

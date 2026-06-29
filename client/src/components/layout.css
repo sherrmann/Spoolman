@@ -40,14 +40,22 @@
   }
 }
 
-/* Mobile: move sider hamburger into header row */
+/* Mobile: move sider hamburger into header row.
+   NOTE: This selector targets antd's inline-style substrings (the floating
+   trigger button refine/antd renders with `position: fixed; top: 64px`).
+   It is inherently fragile and may break if antd changes how the mobile sider
+   trigger is positioned; there is no stable class hook for it without
+   restructuring the layout component. */
 @media (max-width: 992px) {
   .spoolman-root .ant-btn-lg[style*="position: fixed"][style*="top: 64"] {
     top: 12px !important;
   }
 }
 
-/* Mobile: show only icons in list header buttons */
+/* Mobile: show only icons in list header buttons.
+   NOTE: relies on antd's hashed `page-header-heading-extra` class name; this is
+   fragile across antd upgrades but there is no stable hook for the list header
+   action area without restructuring. */
 @media (max-width: 768px) {
   [class*="page-header-heading-extra"] .ant-btn > .ant-btn-icon + span {
     display: none !important;

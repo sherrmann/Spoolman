@@ -21,6 +21,7 @@ import { formatWeight } from "../../utils/parsing";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { IFilament } from "../filaments/model";
 import { ISpool } from "../spools/model";
+import { IVendor } from "../vendors/model";
 import "./home.css";
 
 dayjs.extend(utc);
@@ -51,7 +52,7 @@ export const Home = () => {
     resource: "filament",
     pagination: { pageSize: 1 },
   });
-  const vendors = useList<ISpool>({
+  const vendors = useList<IVendor>({
     resource: "vendor",
     pagination: { pageSize: 1 },
   });
