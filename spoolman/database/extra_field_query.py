@@ -34,6 +34,14 @@ def _compile_json_array_first_pg(element: _JsonArrayFirstElement, compiler: obje
     return f"(CAST({col_sql} AS JSON)->>0)"
 
 
+@compiles(_JsonArrayFirstElement, "cockroachdb")
+def _compile_json_array_first_cockroach(element: _JsonArrayFirstElement, compiler: object, **kw: object) -> str:  # type: ignore[misc]
+    """CockroachDB: CAST(value AS JSONB)->>0 returns the first element as TEXT (no json_extract())."""
+    (col_expr,) = element.clauses
+    col_sql = compiler.process(col_expr, **kw)  # type: ignore[union-attr]
+    return f"(CAST({col_sql} AS JSONB)->>0)"
+
+
 @compiles(_JsonArrayFirstElement)
 def _compile_json_array_first_default(element: _JsonArrayFirstElement, compiler: object, **kw: object) -> str:  # type: ignore[misc]
     """SQLite/MariaDB: json_extract(value, '$[0]') returns the first element as a scalar."""
@@ -55,6 +63,14 @@ def _compile_json_array_second_pg(element: _JsonArraySecondElement, compiler: ob
     (col_expr,) = element.clauses
     col_sql = compiler.process(col_expr, **kw)  # type: ignore[union-attr]
     return f"(CAST({col_sql} AS JSON)->>1)"
+
+
+@compiles(_JsonArraySecondElement, "cockroachdb")
+def _compile_json_array_second_cockroach(element: _JsonArraySecondElement, compiler: object, **kw: object) -> str:  # type: ignore[misc]
+    """CockroachDB: CAST(value AS JSONB)->>1 returns the second element as TEXT (no json_extract())."""
+    (col_expr,) = element.clauses
+    col_sql = compiler.process(col_expr, **kw)  # type: ignore[union-attr]
+    return f"(CAST({col_sql} AS JSONB)->>1)"
 
 
 @compiles(_JsonArraySecondElement)

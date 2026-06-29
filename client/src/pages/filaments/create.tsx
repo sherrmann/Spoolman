@@ -102,7 +102,6 @@ export const FilamentCreate = (props: IResourceComponentsProps & CreateOrClonePr
         throw new Error("Failed to fetch profile");
       }
       const data = await response.json();
-      message.success(t("filament.form.import_3dfp_success"));
 
       const filament: ExternalFilament = {
         id: profileId,
@@ -122,7 +121,8 @@ export const FilamentCreate = (props: IResourceComponentsProps & CreateOrClonePr
         glow: false,
       };
 
-      importFilament(filament);
+      await importFilament(filament);
+      message.success(t("filament.form.import_3dfp_success"));
     } catch (err) {
       console.error(err);
       message.error(t("filament.form.import_3dfp_error"));

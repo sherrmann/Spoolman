@@ -47,6 +47,8 @@ async def materials() -> FileResponse:
 )
 async def profile(profile_id: str) -> dict | None:  # noqa: C901, PLR0912, PLR0915
     """Fetch filament data from 3dfilamentprofiles.com."""
+    if not profile_id.isdigit():
+        raise HTTPException(status_code=400, detail="Invalid profile ID; expected a numeric ID.")
     url = f"https://3dfilamentprofiles.com/filament/details/{profile_id}"
     try:
         headers = {
