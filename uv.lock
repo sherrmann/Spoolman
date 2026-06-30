@@ -18,6 +18,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4c/af/aae0153c3e28712adaf462328f6c7a3c196a1c1c27b491de4377dd3e6b52/aiomysql-0.3.2-py3-none-any.whl", hash = "sha256:c82c5ba04137d7afd5c693a258bea8ead2aad77101668044143a991e04632eb2", size = 71834, upload-time = "2025-10-22T00:15:15.905Z" },
 ]
 
+[package.optional-dependencies]
+rsa = [
+    { name = "pymysql", extra = ["rsa"] },
+]
+
 [[package]]
 name = "aiosqlite"
 version = "0.22.1"
@@ -239,7 +244,7 @@ name = "cffi"
 version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pycparser", marker = "implementation_name != 'PyPy' and platform_machine != 'armv7l'" },
+    { name = "pycparser", marker = "implementation_name != 'PyPy'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/56/b1ba7935a17738ae8453301356628e8147c79dbb825bcbc73dc7401f9846/cffi-2.0.0.tar.gz", hash = "sha256:44d1b5909021139fe36001ae048dbdde8214afa20200eda0f64c068cac5d5529", size = 523588, upload-time = "2025-09-08T23:24:04.541Z" }
 wheels = [
@@ -445,8 +450,8 @@ name = "cryptography"
 version = "46.0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cffi", marker = "platform_machine != 'armv7l' and platform_python_implementation != 'PyPy'" },
-    { name = "typing-extensions", marker = "python_full_version < '3.11' and platform_machine != 'armv7l'" },
+    { name = "cffi", marker = "platform_python_implementation != 'PyPy'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/47/93/ac8f3d5ff04d54bc814e961a43ae5b0b146154c89c61b47bb07557679b18/cryptography-46.0.7.tar.gz", hash = "sha256:e4cfd68c5f3e0bfdad0d38e023239b96a2fe84146481852dffbcca442c245aa5", size = 750652, upload-time = "2026-04-08T01:57:54.692Z" }
 wheels = [
@@ -1169,6 +1174,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/7c/4c/ad33b92b9864cbde84f259d5df035a6447f91891f5be77788e2a3892bce3/pymysql-1.1.2-py3-none-any.whl", hash = "sha256:e6b1d89711dd51f8f74b1631fe08f039e7d76cf67a42a323d3178f0f25762ed9", size = 45300, upload-time = "2025-08-24T12:55:53.394Z" },
 ]
 
+[package.optional-dependencies]
+rsa = [
+    { name = "cryptography" },
+]
+
 [[package]]
 name = "pyserial"
 version = "3.5"
@@ -1337,10 +1347,9 @@ name = "spoolman"
 version = "2026.6.1"
 source = { virtual = "." }
 dependencies = [
-    { name = "aiomysql" },
+    { name = "aiomysql", extra = ["rsa"] },
     { name = "alembic" },
     { name = "asyncpg" },
-    { name = "cryptography", marker = "platform_machine != 'armv7l'" },
     { name = "fastapi" },
     { name = "hishel" },
     { name = "httptools", marker = "platform_machine != 'armv7l'" },
@@ -1379,12 +1388,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiomysql", specifier = "~=0.3" },
+    { name = "aiomysql", extras = ["rsa"], specifier = "~=0.3" },
     { name = "alembic", specifier = "~=1.15" },
     { name = "asyncpg", specifier = "~=0.30" },
     { name = "cbor2", marker = "platform_machine == 'armv7l' and extra == 'nfc'", specifier = ">=5.4,<6" },
     { name = "cbor2", marker = "platform_machine != 'armv7l' and extra == 'nfc'", specifier = ">=5.4" },
-    { name = "cryptography", marker = "platform_machine != 'armv7l'", specifier = ">=44" },
     { name = "fastapi", specifier = "~=0.133" },
     { name = "hishel", specifier = "~=0.1" },
     { name = "httptools", marker = "platform_machine != 'armv7l'", specifier = ">=0.6.4" },

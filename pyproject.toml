@@ -32,15 +32,7 @@ dependencies = [
     "prometheus-client~=0.21",
     "httpx~=0.28",
     "hishel~=0.1",
-    "aiomysql~=0.3",
-    # cryptography (a Rust extension) is only needed for MySQL 8
-    # caching_sha2_password / RSA auth — what the old aiomysql[rsa] extra pulled
-    # in via PyMySQL. It still ships armv7 wheels today, but the armv7 image has
-    # no Rust toolchain, so a future wheel drop would break that build with no
-    # fallback. Keep it everywhere except armv7: MariaDB (native_password),
-    # SQLite, PostgreSQL and CockroachDB don't need it, and MySQL 8 on armv7 can
-    # still authenticate over TLS or with mysql_native_password.
-    "cryptography>=44; platform_machine != \"armv7l\"",
+    "aiomysql[rsa]~=0.3",
 ]
 requires-python = ">=3.10"
 
