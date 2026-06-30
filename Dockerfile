@@ -46,13 +46,9 @@ LABEL org.opencontainers.image.description="Spoolman NG - a community-maintained
 LABEL org.opencontainers.image.licenses=MIT
 
 # Install gosu for privilege dropping and libusb for NFC reader support.
-# libstdc++6 and libpq5 are runtime shared libs for extensions that have no
-# armv7 wheel and are therefore compiled from source in the builder stage:
-# greenlet (C++; used by SQLAlchemy's async engine on every backend) needs
-# libstdc++6, and psycopg2 (PostgreSQL) links libpq. On amd64/arm64 these come
-# from prebuilt wheels that don't need the libs added here, but the 32-bit ARM
-# image does — without them the container fails to start (greenlet) or can't
-# reach PostgreSQL (psycopg2).
+# libstdc++6 (C++ runtime, see the LD_PRELOAD note below) and libpq5 (libpq for
+# psycopg2/PostgreSQL, which has no armv7 wheel and is compiled from source) are
+# needed by the 32-bit ARM image; on amd64/arm64 they come in via prebuilt wheels.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gosu \
     libusb-1.0-0 \
@@ -60,6 +56,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# greenlet (required by SQLAlchemy's async engine on every backend) has no armv7
+# wheel, so on 32-bit ARM it is compiled from source — and setuptools links the
+# extension with gcc, leaving libstdc++.so.6 out of the .so's NEEDED list even
+# though it uses libstdc++ C++ ABI symbols. That makes greenlet fail to import
+# with "undefined symbol: _ZTVN10__cxxabiv120__si_class_type_infoE", aborting
+# startup before the API comes up. Preload libstdc++ by SONAME (resolved per-arch
+# via ldconfig) so the symbols are available. No-op on amd64/arm64, where greenlet
+# installs from a correctly linked wheel.
+ENV LD_PRELOAD=libstdc++.so.6
 
 # Add local user so we don't run as root
 RUN groupmod -g 1000 users \
