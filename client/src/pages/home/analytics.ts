@@ -46,10 +46,12 @@ export function lowStockSpools(spools: ISpool[]): ISpool[] {
 
 /** The most-recently-used spools, newest first, capped at `limit`. Does not mutate the input. */
 export function recentSpools(spools: ISpool[], limit = 5): ISpool[] {
-  return [...spools]
+  return spools
     .filter((s) => s.last_used)
-    .sort((a, b) => dayjs(b.last_used).valueOf() - dayjs(a.last_used).valueOf())
-    .slice(0, limit);
+    .map((s) => [dayjs(s.last_used).valueOf(), s] as const)
+    .sort((a, b) => b[0] - a[0])
+    .slice(0, limit)
+    .map(([, s]) => s);
 }
 
 /** Count + total weight grouped by material (default "Unknown"), heaviest group first. */
