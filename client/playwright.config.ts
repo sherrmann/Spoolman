@@ -29,6 +29,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // Retries exist to gather traces, not to hide flakiness: a pass-on-retry still
+  // fails the run (a flaky journey masked a real backend 500 in a green CI run).
+  failOnFlakyTests: true,
   // Journey tests share one real backend, so run them serially for isolation.
   workers: 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
