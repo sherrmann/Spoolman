@@ -1,5 +1,5 @@
-import { expect, test } from "@playwright/test";
 import { DEPLOYMENTS } from "./constants";
+import { expect, test } from "./fixtures";
 
 // End-to-end coverage for the two PWA serving behaviours that only exist once the
 // built client is served through the backend's base-path rewrite, and can only be

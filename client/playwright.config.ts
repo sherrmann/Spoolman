@@ -2,13 +2,16 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
-import { ROOT_BASE_URL, SUBPATH, SUBPATH_BASE_URL } from "./e2e/constants";
+import { APP_BASE_URL, ROOT_BASE_URL, SUBPATH, SUBPATH_BASE_URL } from "./e2e/constants";
 
-// The e2e harness serves the *built* client through the real backend
-// SinglePageApplication (client/e2e/serve.py), so `npm run build` must have run.
-// Two independent servers cover both deploy shapes:
-//   root   → http://127.0.0.1:30011/            (SPOOLMAN_BASE_PATH unset)
-//   subpath→ http://127.0.0.1:30012/spoolman/   (SPOOLMAN_BASE_PATH=spoolman)
+// The e2e suite runs the *built* client (so `npm run build` must have run) against
+// three servers:
+//   root    → http://127.0.0.1:30011/           static harness, root deploy (PWA tests)
+//   subpath → http://127.0.0.1:30012/spoolman/  static harness, sub-path deploy (PWA tests)
+//   app     → http://127.0.0.1:30013/           REAL backend (API + client + temp SQLite),
+//                                                driven by the whole-app journey tests
+// When E2E_COVERAGE=1 the build carries inline source maps and a global teardown
+// aggregates each test's V8 coverage back onto client/src (see e2e/coverage-*.ts).
 
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(configDir, "..");
@@ -26,10 +29,12 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Journey tests share one real backend, so run them serially for isolation.
+  workers: 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   timeout: 60_000,
   expect: { timeout: 15_000 },
+  globalTeardown: "./e2e/coverage-teardown.ts",
   use: {
     trace: "on-first-retry",
     launchOptions,
@@ -51,6 +56,20 @@ export default defineConfig({
       url: `${SUBPATH_BASE_URL}${SUBPATH}/config.js`,
       reuseExistingServer: !process.env.CI,
       timeout: 60_000,
+    },
+    {
+      // Real backend: fresh temp SQLite each run, serving API + built client.
+      command:
+        "rm -rf .e2e-data && mkdir -p .e2e-data && uv run uvicorn spoolman.main:app --host 127.0.0.1 --port 30013 --log-level warning",
+      cwd: repoRoot,
+      env: {
+        SPOOLMAN_DB_TYPE: "sqlite",
+        SPOOLMAN_DIR_DATA: path.join(repoRoot, ".e2e-data"),
+        SPOOLMAN_LOGGING_LEVEL: "WARNING",
+      },
+      url: `${APP_BASE_URL}/api/v1/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
     },
   ],
 });
