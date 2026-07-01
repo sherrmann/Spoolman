@@ -108,8 +108,8 @@ Wire-up:
 - Existing backend job: add a `pytest tests/ --cov=spoolman --cov-branch` unit step (fast) ahead of
   the DB integration matrix.
 - Coverage upload + threshold gate (§6). Keep `npm audit` / `check-i18n` as they are.
-- **e2e** (Playwright, Chromium already provisioned) as a separate, non-blocking job for the
-  PWA/service-worker/manifest flows that can only be verified in a real browser.
+- **e2e** (Playwright, Chromium already provisioned) as a separate per-PR job for the
+  PWA/service-worker/manifest flows that can only be verified in a real browser. *(Done — see §8.)*
 
 ---
 
@@ -381,10 +381,27 @@ unless every row is asserted) and the defensive hardware-read branches — exact
 advisory framing anticipates. Kicking the tests here is also what surfaced the `ndeflib`
 `DecodeError` crash fixed above.
 
+**Also done — Phase 4 browser e2e (Playwright) for the PWA serving flows:**
+
+The SW precache-navigation (#93) and manifest base-path (#95) fixes only exist once the built
+client is served through the backend's base-path rewrite, and can only be proven in a real
+browser — so they get a Playwright suite (`client/e2e/`, `npm run test:e2e`). A minimal, DB-free
+harness (`client/e2e/serve.py`) serves the built `client/dist` through the **real**
+`SinglePageApplication` (index/manifest rewrite + SPA fallback) plus the dynamic `config.js`,
+at both a root deploy and a `/spoolman` sub-path. Newest Playwright (`@playwright/test` 1.61) +
+Chromium; locally it drives the sandbox's pre-installed browser via `executablePath`, in CI it
+uses `playwright install`. Six tests (root × sub-path):
+
+- **#95** — `GET <base>/manifest.webmanifest` has `start_url`/`scope` rewritten to the deploy base
+  (`/` vs `/spoolman/`) with icon `src` left relative.
+- **#93** — the SW registers scoped to `<base>/`; and once it *controls* the page, a deep
+  hard-navigation (`<base>/spool/print`) boots the app with `window.SPOOLMAN_BASE_PATH` set and
+  **every asset resolving (no 404)** — i.e. it is served the base-path-rewritten `index.html` from
+  the network, not the raw precached HTML (whose relative `./` assets would 404 at depth).
+
+Wired as a per-PR CI job (`e2e` in `ci.yml`: build client → `uv sync` → `playwright install` → run).
+
 **Remaining (follow-up):**
 
 - Phase 3 (component): print-dialog default-resolution, i18n `<Trans>` rendering (both need
   rendering provider-heavy components; the print-dialog updates are plain immutable spreads now).
-- Phase 4: Playwright e2e for the SW/manifest flows. (Client mutation scores now clear the 90%
-  "high" threshold across all crown-jewel modules: `analytics.ts` 98%, `tigertagCodec.ts` 96%,
-  `scan.ts` 98%, `spoolCardHelpers.ts` 100%.)
