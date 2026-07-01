@@ -9,7 +9,7 @@ const RELOAD_COOLDOWN_MS = 30_000;
  * PWA service worker's NavigationRoute would otherwise serve the precached
  * index.html and prevent the reload from reaching the proxy, so unregister it.
  */
-async function reloadOnAuthFailure(): Promise<void> {
+export async function reloadOnAuthFailure(): Promise<void> {
   let last = 0;
   try {
     last = Number(localStorage.getItem(RELOAD_FLAG_KEY) || "0");
@@ -37,24 +37,34 @@ async function reloadOnAuthFailure(): Promise<void> {
 // re-evaluate this module, which would otherwise stack duplicate interceptors
 // and fire multiple reloads per 401. The flag lives on the shared axios
 // instance (not module scope) so it survives module re-evaluation.
+interface AuthError {
+  response?: { status?: number };
+  config?: { method?: string };
+}
+
+/**
+ * Axios response-error handler: reload on a 401 for idempotent (GET/HEAD) requests
+ * only, so unsaved form data on POST/PUT/PATCH/DELETE is preserved — mutation 401s
+ * surface through the Refine notification provider instead. Always re-rejects so
+ * callers still see the error.
+ */
+export function handleAuthResponseError(error: AuthError): Promise<never> {
+  if (error?.response?.status === 401) {
+    const method = String(error.config?.method ?? "get").toLowerCase();
+    if (method === "get" || method === "head") void reloadOnAuthFailure();
+  }
+  return Promise.reject(error);
+}
+
+// Guard against double-registration: in dev, Vite/React fast refresh can
+// re-evaluate this module, which would otherwise stack duplicate interceptors
+// and fire multiple reloads per 401. The flag lives on the shared axios
+// instance (not module scope) so it survives module re-evaluation.
 const instance = axiosInstance as typeof axiosInstance & {
   __spoolmanAuthReloadInstalled?: boolean;
 };
 
 if (!instance.__spoolmanAuthReloadInstalled) {
   instance.__spoolmanAuthReloadInstalled = true;
-
-  axiosInstance.interceptors.response.use(
-    (response) => response,
-    (error) => {
-      if (error?.response?.status === 401) {
-        // Auto-reload only on idempotent requests so unsaved form data on
-        // POST/PUT/PATCH/DELETE is preserved — mutation 401s surface through
-        // the Refine notification provider instead.
-        const method = String(error.config?.method ?? "get").toLowerCase();
-        if (method === "get" || method === "head") void reloadOnAuthFailure();
-      }
-      return Promise.reject(error);
-    },
-  );
+  axiosInstance.interceptors.response.use((response) => response, handleAuthResponseError);
 }
