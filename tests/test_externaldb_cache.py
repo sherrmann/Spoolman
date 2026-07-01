@@ -11,7 +11,7 @@ from pathlib import Path
 import hishel
 import pytest
 import respx
-from httpx import Response
+from httpx import HTTPStatusError, Response
 
 from spoolman import externaldb
 from spoolman.externaldb import _download_file
@@ -58,5 +58,5 @@ async def test_second_download_is_served_from_cache():
 async def test_http_error_propagates():
     url = "https://db.example.test/missing.json"
     respx.get(url).mock(return_value=Response(404))
-    with pytest.raises(Exception, match="404"):
+    with pytest.raises(HTTPStatusError, match="404"):
         await _download_file(url)
