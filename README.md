@@ -21,7 +21,7 @@ Spoolman NG is a self-hosted web service designed to help you efficiently manage
 [![GitHub Release](https://img.shields.io/github/v/release/sherrmann/Spoolman)](https://github.com/sherrmann/Spoolman/releases)
 [![API Docs](https://img.shields.io/badge/API-docs-blue)](https://sherrmann.github.io/Spoolman/)
 [![Fork of Donkie/Spoolman](https://img.shields.io/badge/fork%20of-Donkie%2FSpoolman-lightgrey)](https://github.com/Donkie/Spoolman)
-[![Spoolman Wiki](https://img.shields.io/badge/Spoolman-Wiki-blue)](https://github.com/Donkie/Spoolman/wiki)
+[![Docs](https://img.shields.io/badge/Docs-installation%20%26%20monitoring-blue)](docs/installation.md)
 
 ### Features
 * **Filament Management**: Keep comprehensive records of filament types, manufacturers, and individual spools.
@@ -42,7 +42,7 @@ Spoolman NG is a self-hosted web service designed to help you efficiently manage
   * External integration endpoint (`POST /api/v1/nfc/lookup`) for Klipper NFC daemons and other clients.
 * **Database Support**: SQLite, PostgreSQL, MySQL, and CockroachDB.
 * **Multi-Printer Management**: Handles spool updates from several printers simultaneously.
-* **Advanced Monitoring**: Integrate with [Prometheus](https://prometheus.io/) for detailed historical analysis of filament usage, helping you track and optimize your printing processes. See the [Wiki](https://github.com/Donkie/Spoolman/wiki/Filament-Usage-History) for instructions on how to set it up.
+* **Advanced Monitoring**: Integrate with [Prometheus](https://prometheus.io/) for detailed historical analysis of filament usage, helping you track and optimize your printing processes. See [docs/monitoring.md](docs/monitoring.md) for setup and example queries.
 
 ### Integrations
 
@@ -95,7 +95,7 @@ curl -fsSL https://github.com/sherrmann/Spoolman/releases/latest/download/spoolm
   && unzip spoolman.zip -d ~/Spoolman && cd ~/Spoolman && ./scripts/install.sh
 ```
 
-The UI then runs on `http://<host>:8000` (configurable via `.env`). Your database lives in a separate data directory, so updates never touch it.
+The UI then runs on `http://<host>:7912` (configurable via `.env`). Your database lives in a separate data directory, so updates never touch it.
 
 > The native install omits the optional **NFC** feature by default; add it on any platform with `uv sync --extra nfc`.
 
@@ -113,7 +113,7 @@ path: ~/Spoolman
 
 Spoolman NG then shows up in your printer UI's update list and tracks new releases automatically. (The releases ship the `release_info.json` that Moonraker's `web` update type expects.)
 
-For other configuration options, the original [Spoolman Installation Wiki](https://github.com/Donkie/Spoolman/wiki/Installation) also applies.
+For all configuration options (databases, backups, base path, every environment variable), see the [Installation & Configuration guide](docs/installation.md).
 
 ## Security & exposure
 
